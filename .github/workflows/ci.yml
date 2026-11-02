@@ -26,5 +26,7 @@ jobs:
 
       - name: Run tests with pytest
         working-directory: simple-flask-app
+        env:
+          PYTHONPATH: .
         run: |
           pytest
