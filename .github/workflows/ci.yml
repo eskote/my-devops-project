@@ -25,5 +25,6 @@ jobs:
           pip3 install -r simple-flask-app/requirements.txt
 
       - name: Run tests with pytest
+        working-directory: simple-flask-app
         run: |
           pytest
