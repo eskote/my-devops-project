@@ -11,7 +11,7 @@ provider "aws" {
   region = "us-east-1"
 }
 
-resource "aws_app_runner_service" "staging" {
+resource "aws_apprunner_service" "staging" {
   service_name = "simple-flask-app-staging"
 
   source_configuration {
@@ -29,5 +29,5 @@ variable "ecr_image_identifier" {
 }
 
 output "service_url" {
-    value = aws_app_runner_service.staging.service_url
+    value = aws_apprunner_service.staging.service_url
 }
