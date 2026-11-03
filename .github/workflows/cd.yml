@@ -17,10 +17,10 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -28,7 +28,7 @@ jobs:
 
       - name: Log in to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
@@ -36,11 +36,17 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          echo "Building image: $IMAGE_URI"
+
+          docker build -t "$IMAGE_URI" \
             -f simple-flask-app/Dockerfile \
             simple-flask-app
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+          docker push "$IMAGE_URI"
+
+          echo "image=$IMAGE_URI" >> "$GITHUB_OUTPUT"
+          echo "Successfully set output → $IMAGE_URI"
 
   deploy:
     name: Deploy to Staging
@@ -49,13 +55,16 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Show image being deployed
+        run: echo "Deploying image → ${{ needs.build-and-push.outputs.image }}"
 
       - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -65,4 +74,6 @@ jobs:
         run: terraform -chdir=terraform init
 
       - name: Terraform Apply
-        run: terraform -chdir=terraform apply -auto-approve -var="ecr_image_identifier=${{ needs.build-and-push.outputs.image }}"
+        run: |
+          terraform -chdir=terraform apply -auto-approve \
+            -var="ecr_image_identifier=${{ needs.build-and-push.outputs.image }}"
