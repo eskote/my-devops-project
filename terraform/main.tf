@@ -52,5 +52,5 @@ variable "ecr_image_identifier" {
 }
 
 output "service_url" {
-  value = aws_ecs_express_gateway_service.staging.service_url
+  value = aws_ecs_express_gateway_service.staging.service_arn
 }
